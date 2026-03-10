@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажер: Алгоритм Хелда-Карпа (TSP)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @keyframes dash {
+            to { stroke-dashoffset: -100; }
+        }
+        .animate-dash {
+            stroke-dasharray: 10, 5;
+            animation: dash 2s linear infinite;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-4px); }
+            40%, 80% { transform: translateX(4px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+        .hidden-step {
+            display: none;
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-900 h-screen overflow-hidden">
+
+<div class="flex flex-col h-full md:flex-row">
+    <!-- Sidebar -->
+    <aside class="w-full md:w-1/3 bg-white border-r border-slate-200 p-6 overflow-y-auto flex flex-col gap-8 shadow-sm">
+        <div>
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <i data-lucide="info" class="text-blue-600 w-5 h-5"></i>
+                Матриця відстаней
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-200">
+                <table id="distance-matrix" class="w-full border-collapse text-sm text-center">
+                    <!-- Буде заповнено JS -->
+                </table>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <i data-lucide="refresh-cw" class="text-green-600 w-5 h-5"></i>
+                Візуалізація графа
+            </h2>
+            <div class="aspect-square bg-slate-50 rounded-xl border border-dashed border-slate-300 relative flex items-center justify-center">
+                <svg id="tsp-graph" viewBox="0 0 300 300" class="w-full h-full">
+                    <!-- Буде заповнено JS -->
+                </svg>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 md:p-10 flex flex-col justify-between overflow-y-auto">
+        <div class="max-w-2xl mx-auto w-full">
+            <!-- Progress -->
+            <div class="mb-8">
+                <div class="flex items-center gap-2 text-blue-600 font-medium mb-2 uppercase tracking-wider text-xs">
+                    <span id="step-counter">Крок 1 з 6</span>
+                    <div class="h-1 flex-1 bg-slate-200 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="h-full bg-blue-600 transition-all duration-500 w-0"></div>
+                    </div>
+                </div>
+                <h1 id="step-title" class="text-3xl font-extrabold text-slate-900 tracking-tight">Завантаження...</h1>
+            </div>
+
+            <!-- Interaction Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-6">
+                <div id="step-description" class="text-lg text-slate-700 leading-relaxed"></div>
+
+                <div id="step-formula-container" class="bg-slate-50 p-6 rounded-xl border border-slate-100 flex justify-center items-center overflow-x-auto hidden">
+                    <div id="step-formula"></div>
+                </div>
+
+                <div id="questions-container" class="space-y-6 pt-4 hidden">
+                    <!-- Запитання будуть тут -->
+                </div>
+
+                <div id="controls" class="flex flex-wrap gap-4 pt-4 hidden">
+                    <button onclick="checkAnswers()" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg shadow-blue-100 active:scale-95">
+                        Перевірити відповіді
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="toggleHint()" class="px-6 py-3 border border-slate-200 hover:bg-slate-50 rounded-xl font-medium transition-all flex items-center gap-2 active:scale-95">
+                        <i data-lucide="help-circle" class="w-4 h-4"></i>
+                        <span id="hint-btn-text">Підказка</span>
+                    </button>
+                </div>
+
+                <div id="hint-box" class="bg-blue-50 border border-blue-100 p-5 rounded-xl text-blue-800 text-sm hidden">
+                    <ul id="hint-list" class="space-y-2"></ul>
+                </div>
+
+                <div id="start-btn-container" class="pt-6 hidden">
+                    <button onclick="nextStep()" class="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg shadow-blue-100 active:scale-95">
+                        Розпочати навчання
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <div id="success-container" class="text-center pt-8 space-y-6 hidden">
+                    <div class="inline-flex items-center justify-center w-24 h-24 bg-green-100 text-green-600 rounded-full animate-bounce">
+                        <i data-lucide="trophy" class="w-12 h-12"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-slate-900">Задача розв'язана!</h2>
+                    <p class="text-slate-600 text-lg">Ви успішно застосували динамічне програмування для пошуку найкоротшого шляху.</p>
+                    <button onclick="resetApp()" class="px-8 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold transition-all active:scale-95">
+                        Спробувати ще раз
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-10 text-center text-slate-400 text-xs flex items-center justify-center gap-4">
+           <button id="back-btn" onclick="prevStep()" class="text-slate-500 hover:text-blue-600 flex items-center gap-1 font-medium hidden">
+             <i data-lucide="chevron-left" class="w-4 h-4"></i> Назад
+           </button>
+           <span>Алгоритм Хелда-Карпа • Складність $O(2^n \cdot n^2)$</span>
+        </div>
+    </main>
+</div>
+
+<script>
+    const DISTANCE_MATRIX = [
+        [0, 10, 15, 20, 25],
+        [10, 0, 35, 25, 10],
+        [15, 35, 0, 30, 5],
+        [20, 25, 30, 0, 15],
+        [25, 10, 5, 15, 0]
+    ];
+
+    const CITY_LABELS = ['0', '1', '2', '3', '4'];
+    const CITIES = [
+        { x: 150, y: 50, id: 0 },
+        { x: 250, y: 120, id: 1 },
+        { x: 220, y: 250, id: 2 },
+        { x: 80, y: 250, id: 3 },
+        { x: 50, y: 120, id: 4 },
+    ];
+
+    const STEPS = [
+        {
+            id: 'intro',
+            title: 'Вступ: Метод Хелда-Карпа',
+            description: 'Ми використовуємо динамічне програмування. Основна функція $g(S, i)$ — це найкоротший шлях з міста 0, що проходить через усі міста множини $S$ і закінчується в місті $i$. Наша мета — знайти мінімальний замкнений цикл.',
+            type: 'info'
+        },
+        {
+            id: 'size1',
+            title: 'Крок 1: Базові випадки',
+            description: 'Спочатку знайдемо відстані від міста 0 до кожного іншого міста напряму. Це множини $S$ розміром 1.',
+            formula: 'g(\\{i\\}, i) = d(0, i)',
+            questions: [
+                { id: 'g1', label: 'g(\\{1\\}, 1)', correct: 10, hint: 'Відстань від 0 до 1 в таблиці' },
+                { id: 'g2', label: 'g(\\{2\\}, 2)', correct: 15, hint: 'Відстань від 0 до 2 в таблиці' },
+                { id: 'g3', label: 'g(\\{3\\}, 3)', correct: 20, hint: 'Відстань від 0 до 3 в таблиці' },
+                { id: 'g4', label: 'g(\\{4\\}, 4)', correct: 25, hint: 'Відстань від 0 до 4 в таблиці' }
+            ],
+            type: 'input'
+        },
+        {
+            id: 'size2',
+            title: 'Крок 2: Множини з 2 міст',
+            description: 'Тепер ми розглядаємо шлях через два міста. Наприклад, щоб знайти шлях до міста 4 через місто 2, ми беремо вже відоме $g(\\{2\\}, 2)$ і додаємо $d(2, 4)$.',
+            formula: 'g(\\{j, i\\}, i) = g(\\{j\\}, j) + d(j, i)',
+            questions: [
+                { id: 'g24', label: 'g(\\{2, 4\\}, 4) = g(\\{2\\}, 2) + d(2, 4)', correct: 20, hint: '15 (з кроку 1) + 5 (відстань 2-4)' },
+                { id: 'g14', label: 'g(\\{1, 4\\}, 4) = g(\\{1\\}, 1) + d(1, 4)', correct: 20, hint: '10 (з кроку 1) + 10 (відстань 1-4)' },
+                { id: 'g41', label: 'g(\\{4, 1\\}, 1) = g(\\{4\\}, 4) + d(4, 1)', correct: 35, hint: '25 (з кроку 1) + 10 (відстань 4-1)' }
+            ],
+            type: 'input'
+        },
+        {
+            id: 'size3',
+            title: 'Крок 3: Вибір мінімуму',
+            description: 'Коли в множині $S$ більше 1 проміжного міста, ми повинні вибрати найкраще "попереднє" місто.',
+            formula: 'g(S, i) = \\min_{j \\in S, j \\neq i} [ g(S \\setminus \\{i\\}, j) + d(j, i) ]',
+            questions: [
+                { id: 'g124_2', label: '\\min( g(\\{1, 4\\}, 1)+d(1,2), g(\\{1, 4\\}, 4)+d(4,2) )', correct: 25, hint: 'min(35+35, 20+5) = min(70, 25)' }
+            ],
+            type: 'input'
+        },
+        {
+            id: 'final',
+            title: 'Фінальний крок: Повернення',
+            description: 'Після того як ми обійшли всі 4 міста (1,2,3,4), нам потрібно повернутися в місто 0.',
+            formula: 'F = \\min_{i \\in \\{1,2,3,4\\}} [ g(\\{1,2,3,4\\}, i) + d(i, 0) ]',
+            questions: [
+                { id: 'ans', label: 'Мінімальна довжина циклу', correct: 55, hint: 'Найкращий варіант: 0-3-4-2-1-0' }
+            ],
+            type: 'input'
+        },
+        {
+            id: 'congrats',
+            title: 'Задача розв\'язана!',
+            description: 'Ви успішно пройшли етапи алгоритму Хелда-Карпа. Мінімальна вартість 55. Один з оптимальних шляхів: $0 \\to 3 \\to 4 \\to 2 \\to 1 \\to 0$.',
+            type: 'success'
+        }
+    ];
+
+    let currentStepIdx = 0;
+    let showHint = false;
+
+    // Helper: Parse text with math
+    function renderSmartText(container, text) {
+        if (!text) return;
+        const parts = text.split(/(\$.*?\$)/g);
+        container.innerHTML = '';
+        parts.forEach(part => {
+            const span = document.createElement('span');
+            if (part.startsWith('$') && part.endsWith('$')) {
+                const tex = part.slice(1, -1);
+                katex.render(tex, span);
+            } else {
+                span.textContent = part;
+            }
+            container.appendChild(span);
+        });
+    }
+
+    function initMatrix() {
+        const table = document.getElementById('distance-matrix');
+        let html = `<thead><tr class="bg-slate-100"><th class="p-2 border border-slate-200">/</th>`;
+        CITY_LABELS.forEach(c => html += `<th class="p-2 border border-slate-200">${c}</th>`);
+        html += `</tr></thead><tbody>`;
+        DISTANCE_MATRIX.forEach((row, i) => {
+            html += `<tr><td class="p-2 border border-slate-200 font-bold bg-slate-50">${i}</td>`;
+            row.forEach((val, j) => {
+                html += `<td class="p-2 border border-slate-200 ${i === j ? 'bg-slate-100 text-slate-400' : ''}">${val}</td>`;
+            });
+            html += `</tr>`;
+        });
+        html += `</tbody>`;
+        table.innerHTML = html;
+    }
+
+    function initGraph() {
+        const svg = document.getElementById('tsp-graph');
+        svg.innerHTML = '';
+        
+        // Connections
+        CITIES.forEach(c1 => {
+            CITIES.forEach(c2 => {
+                if (c1.id < c2.id) {
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", c1.x);
+                    line.setAttribute("y1", c1.y);
+                    line.setAttribute("x2", c2.x);
+                    line.setAttribute("y2", c2.y);
+                    line.setAttribute("stroke", "#e2e8f0");
+                    line.setAttribute("stroke-width", "1");
+                    svg.appendChild(line);
+                }
+            });
+        });
+
+        // Cities
+        CITIES.forEach(city => {
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circle.setAttribute("cx", city.x);
+            circle.setAttribute("cy", city.y);
+            circle.setAttribute("r", "18");
+            circle.setAttribute("fill", city.id === 0 ? "#1e293b" : "white");
+            circle.setAttribute("stroke", "#1e293b");
+            circle.setAttribute("stroke-width", "2");
+            
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", city.x);
+            text.setAttribute("y", city.y + 5);
+            text.setAttribute("text-anchor", "middle");
+            text.setAttribute("fill", city.id === 0 ? "white" : "#1e293b");
+            text.setAttribute("font-size", "14");
+            text.setAttribute("font-weight", "bold");
+            text.textContent = city.id;
+            
+            g.appendChild(circle);
+            g.appendChild(text);
+            svg.appendChild(g);
+        });
+    }
+
+    function updateGraphPath() {
+        const svg = document.getElementById('tsp-graph');
+        const existingPath = svg.querySelector('.final-path');
+        if (existingPath) existingPath.remove();
+
+        if (currentStepIdx === STEPS.length - 1) {
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            // 0 -> 3 -> 4 -> 2 -> 1 -> 0
+            const d = "M150,50 L80,250 L50,120 L220,250 L250,120 Z";
+            path.setAttribute("d", d);
+            path.setAttribute("fill", "none");
+            path.setAttribute("stroke", "#3b82f6");
+            path.setAttribute("stroke-width", "3");
+            path.setAttribute("class", "final-path animate-dash");
+            svg.appendChild(path);
+        }
+    }
+
+    function renderStep() {
+        const step = STEPS[currentStepIdx];
+        
+        // UI Elements
+        document.getElementById('step-title').textContent = step.title;
+        renderSmartText(document.getElementById('step-description'), step.description);
+        document.getElementById('step-counter').textContent = `Крок ${currentStepIdx + 1} з ${STEPS.length}`;
+        document.getElementById('progress-bar').style.width = `${((currentStepIdx + 1) / STEPS.length) * 100}%`;
+
+        // Reset visibility
+        document.getElementById('step-formula-container').classList.add('hidden');
+        document.getElementById('questions-container').classList.add('hidden');
+        document.getElementById('controls').classList.add('hidden');
+        document.getElementById('start-btn-container').classList.add('hidden');
+        document.getElementById('success-container').classList.add('hidden');
+        document.getElementById('hint-box').classList.add('hidden');
+        document.getElementById('back-btn').classList.toggle('hidden', currentStepIdx === 0 || currentStepIdx === STEPS.length - 1);
+        showHint = false;
+        document.getElementById('hint-btn-text').textContent = "Підказка";
+
+        if (step.formula) {
+            const formulaDiv = document.getElementById('step-formula');
+            katex.render(step.formula, formulaDiv, { displayMode: true });
+            document.getElementById('step-formula-container').classList.remove('hidden');
+        }
+
+        if (step.type === 'info') {
+            document.getElementById('start-btn-container').classList.remove('hidden');
+        } else if (step.type === 'input') {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+            step.questions.forEach(q => {
+                const row = document.createElement('div');
+                row.className = "flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-left";
+                
+                const label = document.createElement('div');
+                label.className = "w-full sm:w-1/2 text-slate-600 font-medium text-lg";
+                katex.render(q.label, label);
+                label.innerHTML += ' <span class="ml-1">=</span>';
+
+                const inputWrapper = document.createElement('div');
+                inputWrapper.className = "relative w-full sm:w-1/2";
+                
+                const input = document.createElement('input');
+                input.type = "number";
+                input.id = `input-${q.id}`;
+                input.className = "w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none text-center text-xl font-mono";
+                input.placeholder = "?";
+                
+                inputWrapper.appendChild(input);
+                row.appendChild(label);
+                row.appendChild(inputWrapper);
+                container.appendChild(row);
+            });
+            container.classList.remove('hidden');
+            document.getElementById('controls').classList.remove('hidden');
+        } else if (step.type === 'success') {
+            document.getElementById('success-container').classList.remove('hidden');
+        }
+
+        updateGraphPath();
+        lucide.createIcons();
+    }
+
+    function checkAnswers() {
+        const step = STEPS[currentStepIdx];
+        let allCorrect = true;
+
+        step.questions.forEach(q => {
+            const input = document.getElementById(`input-${q.id}`);
+            const val = parseInt(input.value);
+            const isCorrect = val === q.correct;
+
+            if (isCorrect) {
+                input.classList.remove('border-slate-200', 'border-red-500', 'bg-red-50', 'text-red-700', 'animate-shake');
+                input.classList.add('border-green-500', 'bg-green-50', 'text-green-700');
+                input.disabled = true;
+            } else {
+                input.classList.add('border-red-500', 'bg-red-50', 'text-red-700', 'animate-shake');
+                setTimeout(() => input.classList.remove('animate-shake'), 400);
+                allCorrect = false;
+            }
+        });
+
+        if (allCorrect) {
+            setTimeout(nextStep, 1000);
+        }
+    }
+
+    function toggleHint() {
+        showHint = !showHint;
+        const hintBox = document.getElementById('hint-box');
+        const hintList = document.getElementById('hint-list');
+        const btnText = document.getElementById('hint-btn-text');
+        
+        btnText.textContent = showHint ? "Сховати підказку" : "Підказка";
+        
+        if (showHint) {
+            hintList.innerHTML = '';
+            STEPS[currentStepIdx].questions.forEach(q => {
+                const li = document.createElement('li');
+                li.className = "flex gap-2";
+                const dot = document.createElement('span');
+                dot.className = "font-bold";
+                dot.textContent = "•";
+                const content = document.createElement('span');
+                const labelSpan = document.createElement('span');
+                katex.render(q.label, labelSpan);
+                content.appendChild(labelSpan);
+                content.innerHTML += `: ${q.hint}`;
+                
+                li.appendChild(dot);
+                li.appendChild(content);
+                hintList.appendChild(li);
+            });
+            hintBox.classList.remove('hidden');
+        } else {
+            hintBox.classList.add('hidden');
+        }
+    }
+
+    function nextStep() {
+        if (currentStepIdx < STEPS.length - 1) {
+            currentStepIdx++;
+            renderStep();
+        }
+    }
+
+    function prevStep() {
+        if (currentStepIdx > 0) {
+            currentStepIdx--;
+            renderStep();
+        }
+    }
+
+    function resetApp() {
+        currentStepIdx = 0;
+        renderStep();
+    }
+
+    // Initial setup
+    window.onload = () => {
+        initMatrix();
+        initGraph();
+        renderStep();
+        // Render footer formula
+        const footerTex = document.querySelector('footer span') || document.querySelector('main > div:last-child span');
+        if (footerTex) {
+            const parts = footerTex.innerHTML.split(/(\$.*?\$)/g);
+            footerTex.innerHTML = '';
+            parts.forEach(p => {
+                const s = document.createElement('span');
+                if (p.startsWith('$') && p.endsWith('$')) {
+                    katex.render(p.slice(1,-1), s);
+                } else {
+                    s.textContent = p;
+                }
+                footerTex.appendChild(s);
+            });
+        }
+    };
+</script>
+
+</body>
+</html>
