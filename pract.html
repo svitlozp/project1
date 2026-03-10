@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажер: Інтерактивна Вебформа</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .step-transition { transition: all 0.3s ease; }
+        pre { white-space: pre-wrap; word-break: break-all; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <!-- Заголовок -->
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-cyan-700 mb-2">Інтерактивний Тренажер</h1>
+            <p class="text-slate-500 text-lg">Практична робота: Створення та валідація вебформи</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Бокова панель (Меню) -->
+            <div class="space-y-2" id="sidebar">
+                <!-- Кнопки генеруються через JS -->
+            </div>
+
+            <!-- Основний контент -->
+            <div class="md:col-span-2 space-y-6">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm min-h-[500px] flex flex-col">
+                    <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-4">
+                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2" id="step-title">
+                            Завантаження...
+                        </h2>
+                        <span class="px-3 py-1 bg-cyan-100 text-cyan-700 rounded-full text-xs font-bold uppercase">
+                            Завдання
+                        </span>
+                    </div>
+                    
+                    <p class="text-slate-600 mb-6 bg-slate-50 p-4 rounded-lg border-l-4 border-cyan-500 italic" id="step-task">
+                        Завантаження...
+                    </p>
+
+                    <div class="space-y-6 flex-grow">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-500 mb-2 uppercase tracking-tight">Що ми робимо:</h4>
+                            <p class="text-slate-700 text-base leading-relaxed" id="step-explanation">
+                                ...
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Початковий код:</label>
+                                <pre class="bg-slate-50 p-4 rounded-lg text-xs text-slate-500 border border-slate-100 font-mono" id="code-before"></pre>
+                            </div>
+                            
+                            <div class="flex justify-center py-2">
+                                <div class="bg-cyan-100 p-2 rounded-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-600 transform rotate-90 md:rotate-0"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Оновлений код:</label>
+                                <pre class="bg-emerald-50/50 p-4 rounded-lg text-xs text-emerald-900 border border-emerald-100 font-medium font-mono" id="code-after"></pre>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 p-4 bg-amber-50 border border-amber-100 rounded-lg flex items-start gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-600 shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            <p class="text-sm text-amber-800">
+                                <span class="font-bold">Підказка:</span> <span id="step-tip">...</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Навігація -->
+                <div class="flex justify-between items-center px-2">
+                    <button id="prevBtn" class="px-6 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-semibold text-sm shadow-sm">
+                        Назад
+                    </button>
+                    <div class="flex gap-1.5" id="dots-container">
+                        <!-- Точки генеруються JS -->
+                    </div>
+                    <button id="nextBtn" class="px-6 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-semibold text-sm shadow-md">
+                        Далі
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Футер з QA -->
+        <footer class="mt-12 p-8 bg-white border border-slate-200 rounded-3xl text-center shadow-sm">
+            <h3 class="text-emerald-700 font-bold text-lg mb-3">Фінальний тест (QA)</h3>
+            <p class="text-slate-500 text-sm mb-6">Виконайте ці кроки для перевірки результату:</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col gap-2">
+                    <span class="font-bold text-cyan-700 text-xs">ТЕСТ 1</span>
+                    <p class="text-xs text-slate-600">Email "test" без @ має підсвітитись червоним.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col gap-2">
+                    <span class="font-bold text-cyan-700 text-xs">ТЕСТ 2</span>
+                    <p class="text-xs text-slate-600">Вік "5" заблокує відправку форми браузером.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col gap-2">
+                    <span class="font-bold text-cyan-700 text-xs">ТЕСТ 3</span>
+                    <p class="text-xs text-slate-600">Різні паролі покажуть текстову помилку внизу.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col gap-2">
+                    <span class="font-bold text-cyan-700 text-xs">ТЕСТ 4</span>
+                    <p class="text-xs text-slate-600">Коректні дані видадуть зелений напис "Успіх".</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const steps = [
+            {
+                title: "Візуальна індикація (CSS)",
+                task: "Зробити так, щоб поле світилося червоним при помилці.",
+                explanation: "Ми використовуємо псевдоклас :invalid. Важливо додати :not(:placeholder-shown), щоб порожні поля не ставали червоними одразу при відкритті сторінки.",
+                codeBefore: "input:valid:not(:placeholder-shown) { border-color: #48cae4; }",
+                codeAfter: "input:valid:not(:placeholder-shown) { border-color: #48cae4; }\ninput:invalid:not(:placeholder-shown) { border-color: #ef4444; }",
+                tip: "Додайте цей рядок у блок <style>."
+            },
+            {
+                title: "Обов'язковість (HTML)",
+                task: "Заборонити надсилання форми без нікнейму.",
+                explanation: "Атрибут 'required' — це найпростіший спосіб валідації. Браузер сам зупинить форму і покаже підказку 'Заповніть це поле'.",
+                codeBefore: "<input type=\"text\" id=\"username\" ... >",
+                codeAfter: "<input type=\"text\" id=\"username\" ... required>",
+                tip: "Просто додайте слово required в кінець тегу <input>."
+            },
+            {
+                title: "Формат пошти (HTML)",
+                task: "Змінити тип поля для перевірки email.",
+                explanation: "Зміна type='text' на type='email' змушує браузер шукати символ '@' та крапку. Це вбудована перевірка формату.",
+                codeBefore: "<input type=\"text\" id=\"email\" ... >",
+                codeAfter: "<input type=\"email\" id=\"email\" ... required>",
+                tip: "Замініть text на email в атрибуті type."
+            },
+            {
+                title: "Валідація чисел (HTML)",
+                task: "Налаштувати обмеження віку (14-99).",
+                explanation: "Type='number' забороняє вводити літери, а атрибути 'min' та 'max' створюють межі для значень.",
+                codeBefore: "<input type=\"text\" id=\"age\" ... >",
+                codeAfter: "<input type=\"number\" id=\"age\" min=\"14\" max=\"99\" required>",
+                tip: "Додайте min=\"14\" та max=\"99\" до числового поля."
+            },
+            {
+                title: "Логіка безпеки (JS)",
+                task: "Перевірити, чи збігаються паролі.",
+                explanation: "Ми замінюємо формальну умову 'false' на реальну перевірку: чи значення першого поля (p1) не дорівнює значенню другого (p2).",
+                codeBefore: "if (false) { ... }",
+                codeAfter: "if (p1 !== p2) { \n  e.preventDefault();\n  status.innerText = \"❌ Паролі не збігаються\";\n  return;\n}",
+                tip: "Використовуйте оператор !== для порівняння."
+            }
+        ];
+
+        let currentStep = 0;
+
+        function init() {
+            renderSidebar();
+            renderDots();
+            updateStep();
+            
+            document.getElementById('prevBtn').onclick = () => {
+                if (currentStep > 0) {
+                    currentStep--;
+                    updateStep();
+                }
+            };
+
+            document.getElementById('nextBtn').onclick = () => {
+                if (currentStep < steps.length - 1) {
+                    currentStep++;
+                    updateStep();
+                }
+            };
+        }
+
+        function renderSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.innerHTML = '';
+            steps.forEach((step, index) => {
+                const btn = document.createElement('button');
+                btn.className = `sidebar-btn w-full text-left p-4 rounded-xl transition-all flex items-center gap-3 border bg-white`;
+                btn.innerHTML = `
+                    <span class="font-semibold">${step.title}</span>
+                `;
+                btn.onclick = () => {
+                    currentStep = index;
+                    updateStep();
+                };
+                sidebar.appendChild(btn);
+            });
+        }
+
+        function renderDots() {
+            const container = document.getElementById('dots-container');
+            container.innerHTML = '';
+            steps.forEach((_, index) => {
+                const dot = document.createElement('div');
+                dot.className = `dot h-1.5 w-6 rounded-full transition-all bg-slate-200`;
+                container.appendChild(dot);
+            });
+        }
+
+        function updateStep() {
+            const step = steps[currentStep];
+            
+            // Оновлення тексту
+            document.getElementById('step-title').innerText = `Крок ${currentStep + 1}: ${step.title}`;
+            document.getElementById('step-task').innerText = `"${step.task}"`;
+            document.getElementById('step-explanation').innerText = step.explanation;
+            document.getElementById('code-before').innerText = step.codeBefore;
+            document.getElementById('code-after').innerText = step.codeAfter;
+            document.getElementById('step-tip').innerText = step.tip;
+
+            // Керування кнопками
+            document.getElementById('prevBtn').disabled = currentStep === 0;
+            document.getElementById('nextBtn').disabled = currentStep === steps.length - 1;
+
+            // Оновлення стилів бокової панелі
+            const btns = document.querySelectorAll('.sidebar-btn');
+            btns.forEach((btn, index) => {
+                if (index === currentStep) {
+                    btn.classList.add('border-cyan-500', 'text-cyan-700', 'shadow-md', 'ring-1', 'ring-cyan-500');
+                    btn.classList.remove('border-slate-200', 'text-slate-500');
+                } else {
+                    btn.classList.remove('border-cyan-500', 'text-cyan-700', 'shadow-md', 'ring-1', 'ring-cyan-500');
+                    btn.classList.add('border-slate-200', 'text-slate-500');
+                }
+            });
+
+            // Оновлення точок
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, index) => {
+                if (index === currentStep) {
+                    dot.classList.add('bg-cyan-500');
+                    dot.classList.remove('bg-slate-200');
+                } else {
+                    dot.classList.remove('bg-cyan-500');
+                    dot.classList.add('bg-slate-200');
+                }
+            });
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
