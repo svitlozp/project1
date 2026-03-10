@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #fff; display: flex; justify-content: center; padding-top: 50px; }
+  .container { background: #16213e; padding: 30px; border-radius: 15px; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  h2 { text-align: center; color: #48cae4; margin-bottom: 25px; }
+  label { font-size: 13px; color: #94a3b8; display: block; margin-top: 15px; }
+  input { width: 92%; padding: 12px; margin-top: 8px; border-radius: 8px; border: 2px solid #0f3460; background: #1a1a2e; color: white; outline: none; transition: 0.3s; }
+
+  /* Зелена рамка для валідних полів */
+  input:valid:not(:placeholder-shown) { border-color: #48cae4; }
+  
+  /* ЗАВДАННЯ 1: Червона рамка для некоректно заповнених полів */
+  input:invalid:not(:placeholder-shown) { border-color: #ff4d6d; }
+
+  button { width: 100%; padding: 14px; margin-top: 25px; background: #48cae4; color: #16213e; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
+  #status { text-align: center; margin-top: 20px; font-weight: bold; min-height: 24px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>IT-Club Registration</h2>
+  <form id="regForm">
+    <label>Нікнейм:</label>
+    <input type="text" id="username" placeholder="Придумайте нік" required>
+
+    <label>Електронна пошта:</label>
+    <input type="email" id="email" placeholder="example@mail.com" required>
+
+    <label>Ваш вік (14-99 років):</label>
+    <input type="number" id="age" min="14" max="99" placeholder="Вкажіть цифрами" required>
+
+    <label>Пароль (від 6 символів):</label>
+    <input type="password" id="pass1" minlength="6" required placeholder="******">
+
+    <label>Підтвердження пароля:</label>
+    <input type="password" id="pass2" required placeholder="******">
+
+    <button type="submit">Зареєструватися</button>
+  </form>
+  <div id="status"></div>
+</div>
+
+<script>
+  document.getElementById('regForm').addEventListener('submit', function(e) {
+    let p1 = document.getElementById('pass1').value;
+    let p2 = document.getElementById('pass2').value;
+    let status = document.getElementById('status');
+
+    // ЗАВДАННЯ 5: Логіка перевірки збігу паролів
+    if (p1 !== p2) {
+      e.preventDefault(); // Зупиняємо відправку форми
+      status.style.color = "#ff4d6d";
+      status.innerText = "❌ Паролі не збігаються!";
+      return;
+    }
+
+    // Якщо все добре:
+    e.preventDefault();
+    status.style.color = "#48cae4";
+    status.innerText = "✅ Реєстрація успішна!";
+  });
+</script>
+</body>
+</html>
