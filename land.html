@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Економічний репетитор: Ринок землі</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Lora:italic&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .math-font { font-family: 'Lora', serif; font-style: italic; }
+        .chat-container::-webkit-scrollbar { width: 6px; }
+        .chat-container::-webkit-scrollbar-track { background: transparent; }
+        .chat-container::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .variable { font-family: 'Lora', serif; font-style: italic; font-weight: bold; }
+        sub { font-size: 0.7em; vertical-align: sub; font-style: normal; font-family: sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen p-2 md:p-6">
+
+    <div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200 flex flex-col h-[90vh] md:h-[800px]">
+        
+        <!-- Header -->
+        <header class="bg-indigo-700 p-4 md:p-6 text-white flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/20 p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M20 19.5v-15A2.5 2.5 0 0 0 17.5 2z"/><path d="M20 18.75a2.5 2.5 0 0 0-2.5 2.5H4"/></svg>
+                </div>
+                <div>
+                    <h1 class="text-lg md:text-xl font-bold leading-none">Ринок землі</h1>
+                    <p class="text-[10px] md:text-xs text-indigo-100 mt-1 uppercase tracking-widest">Тренажер • 10 клас</p>
+                </div>
+            </div>
+            <div id="score-display" class="hidden flex items-center gap-2 bg-white/20 px-3 py-1.5 md:px-4 md:py-2 rounded-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#fde047" stroke="#fde047" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span id="current-score" class="font-bold text-sm md:text-base">11 / 11</span>
+            </div>
+        </header>
+
+        <div class="flex flex-col md:flex-row flex-1 overflow-hidden">
+            
+            <!-- Sidebar: Task Selection -->
+            <div class="w-full md:w-72 border-r border-slate-100 p-4 space-y-3 bg-slate-50/50 overflow-y-auto hidden md:block" id="sidebar">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest px-2 mb-2">Завдання</h2>
+                <div id="task-list" class="space-y-2"></div>
+            </div>
+
+            <!-- Mobile Task Selector (visible only when no task active) -->
+            <div id="mobile-start" class="md:hidden p-6 flex flex-col items-center justify-center text-center space-y-4">
+                <h2 class="text-xl font-bold">Обери задачу:</h2>
+                <div id="task-list-mobile" class="w-full space-y-2"></div>
+            </div>
+
+            <!-- Chat Area -->
+            <div id="chat-wrapper" class="hidden flex-1 flex flex-col bg-white overflow-hidden">
+                <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50 chat-container">
+                    <!-- Messages will appear here -->
+                </div>
+
+                <!-- Input Area -->
+                <div class="p-4 border-t border-slate-100 flex gap-2 items-center bg-white shrink-0">
+                    <button id="hint-btn" class="p-3 text-amber-600 hover:bg-amber-50 rounded-xl transition-colors flex flex-col items-center group">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                        <span id="hint-cost" class="text-[8px] font-bold mt-1">FREE</span>
+                    </button>
+                    <input 
+                        id="user-input"
+                        type="text" 
+                        placeholder="Введіть число..."
+                        class="flex-1 bg-slate-100 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                    >
+                    <button id="send-btn" class="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Placeholder Screen -->
+            <div id="placeholder" class="hidden md:flex flex-1 flex-col items-center justify-center p-12 text-center text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mb-4 opacity-20"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <p class="max-w-xs">Обери задачу ліворуч, щоб розпочати практику. Максимальна оцінка — 11 балів!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TASKS = [
+            {
+                id: 1,
+                title: "Задача 1: Рівноважна рента",
+                condition: "Пропозиція землі становить 2000 га, а попит описується рівнянням Qd = 4000 - 0,5R.",
+                goal: "Визначте рівноважну ренту (R).",
+                answer: 4000,
+                hints: [
+                    "Згадай умову рівноваги: обсяг попиту (Qd) має дорівнювати обсягу пропозиції (Qs).",
+                    "У тебе є Qs = 2000. Підстав це значення у рівняння попиту замість Qd.",
+                    "Рівняння має виглядати так: 2000 = 4000 - 0,5R."
+                ],
+                explanation: "Оскільки рента (R) — це ціна рівноваги, ми прирівнюємо Qs до Qd: \n\n2000 = 4000 - 0,5R \n0,5R = 4000 - 2000 \n0,5R = 2000 \nR = 4000 грн.",
+                config: { qs: 2000, rE: 4000, rMax: 8000, qMax: 4500 }
+            },
+            {
+                id: 2,
+                title: "Задача 2: Державне регулювання",
+                condition: "Qs = 2000 га. Рівноважна рента була R = 4000 грн. Уряд встановив мінімальну ренту на рівні 4500 грн. Рівняння попиту: Qd = 4000 - 0,5R.",
+                goal: "Визначте обсяг надлишку землі.",
+                answer: 250,
+                hints: [
+                    "Спочатку дізнайся, скільки землі захочуть взяти в оренду за ціною 4500 грн. Підстав це в Qd.",
+                    "Порівняй отриманий Qd з наявною пропозицією Qs = 2000.",
+                    "Надлишок = Qs - Qd."
+                ],
+                explanation: "Крок 1. Новий попит: Qd = 4000 - 0,5 × 4500 = 1750 га. \nКрок 2. Надлишок: 2000 - 1750 = 250 га. \nЦе земля, яка не використовується через завищену ціну.",
+                config: { qs: 2000, rE: 4000, rFix: 4500, qD_fix: 1750, rMax: 8000, qMax: 4500 }
+            },
+            {
+                id: 3,
+                title: "Задача 3: Урахування забудови",
+                condition: "Попит: Qd = 5000 - 2R. Загальна площа — 5200 га, але 4100 га зайнято забудовою.",
+                goal: "Знайти рівноважну ренту для вільної землі.",
+                answer: 1950,
+                hints: [
+                    "Знайди пропозицію вільної землі (Qs): від загальної площі відніми площу забудови.",
+                    "Прирівняй отримане Qs до рівняння 5000 - 2R.",
+                    "Розв'яжи рівняння для пошуку R."
+                ],
+                explanation: "Спершу Qs = 5200 - 4100 = 1100 га. \nДалі рівновага: 1100 = 5000 - 2R \n2R = 3900 \nR = 1950 грн.",
+                config: { qs: 1100, rE: 1950, rMax: 3000, qMax: 5500 }
+            }
+        ];
+
+        let activeTask = null;
+        let score = 11;
+        let hintIndex = 0;
+        let isSolved = false;
+
+        const chatContainer = document.getElementById('chat-container');
+        const taskList = document.getElementById('task-list');
+        const taskListMobile = document.getElementById('task-list-mobile');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const hintBtn = document.getElementById('hint-btn');
+        const scoreDisplay = document.getElementById('score-display');
+        const currentScoreSpan = document.getElementById('current-score');
+        const hintCostSpan = document.getElementById('hint-cost');
+
+        function formatMath(text) {
+            return text.replace(/\bQd\b|\bQs\b|\bR\b/g, (match) => {
+                if (match === 'Qd') return '<span class="variable">Q<sub>d</sub></span>';
+                if (match === 'Qs') return '<span class="variable">Q<sub>s</sub></span>';
+                return `<span class="variable">${match}</span>`;
+            });
+        }
+
+        function createGraph(task, solved) {
+            const config = task.config;
+            const padding = 40;
+            const width = 300;
+            const height = 200;
+
+            const scaleQ = (q) => padding + (q / config.qMax) * (width - padding * 2);
+            const scaleR = (r) => (height - padding) - (r / config.rMax) * (height - padding * 2);
+
+            const xS = scaleQ(config.qs);
+            const yE = scaleR(config.rE);
+            const dX1 = padding + 10;
+            const dY1 = scaleR(config.rMax * 0.9);
+            const dX2 = width - padding;
+            const dY2 = scaleR(config.rMax * 0.1);
+
+            let extra = '';
+            if (task.id === 2) {
+                const yFix = scaleR(config.rFix);
+                extra = `
+                    <line x1="${padding}" y1="${yFix}" x2="${xS}" y2="${yFix}" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,2" />
+                    <text x="${padding - 35}" y="${yFix + 4}" font-size="9" fill="#d97706" font-weight="bold">${config.rFix}</text>
+                    ${solved ? `<rect x="${scaleQ(config.qD_fix)}" y="${yFix - 8}" width="${xS - scaleQ(config.qD_fix)}" height="8" fill="#fbbf24" fill-opacity="0.3" />` : ''}
+                `;
+            }
+
+            return `
+                <div class="mt-4 p-3 bg-white rounded-xl border border-slate-200">
+                    <svg viewBox="0 0 ${width} ${height}" class="w-full">
+                        <line x1="${padding}" y1="${height - padding}" x2="${width - 10}" y2="${height - padding}" stroke="#64748b" stroke-width="1.5" />
+                        <line x1="${padding}" y1="${height - padding}" x2="${padding}" y2="10" stroke="#64748b" stroke-width="1.5" />
+                        <text x="${width - 15}" y="${height - padding + 12}" font-size="10" fill="#64748b">Q</text>
+                        <text x="${padding - 15}" y="15" font-size="10" fill="#64748b">R</text>
+                        <line x1="${dX1}" y1="${dY1}" x2="${dX2}" y2="${dY2}" stroke="#6366f1" stroke-width="2" />
+                        <text x="${dX2 - 10}" y="${dY2 + 12}" font-size="10" fill="#6366f1" font-weight="bold">D</text>
+                        <line x1="${xS}" y1="${height - padding}" x2="${xS}" y2="20" stroke="#f43f5e" stroke-width="2" />
+                        <text x="${xS - 5}" y="15" font-size="10" fill="#f43f5e" font-weight="bold">S</text>
+                        <line x1="${padding}" y1="${yE}" x2="${xS}" y2="${yE}" stroke="#94a3b8" stroke-dasharray="3,3" />
+                        <circle cx="${xS}" cy="${yE}" r="${solved ? 4 : 3}" fill="${solved ? '#059669' : '#94a3b8'}" />
+                        <text x="${padding - 35}" y="${yE + 4}" font-size="9" fill="${solved ? '#059669' : '#94a3b8'}" font-weight="bold">${solved ? config.rE : '?'}</text>
+                        <text x="${xS - 10}" y="${height - padding + 15}" font-size="9" fill="#475569" font-weight="bold">${config.qs}</text>
+                        ${extra}
+                    </svg>
+                </div>
+            `;
+        }
+
+        function addMessage(role, text, type = 'normal') {
+            const div = document.createElement('div');
+            div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`;
+            
+            let bgClass = 'bg-slate-100 rounded-tl-none';
+            if (role === 'user') bgClass = 'bg-indigo-600 text-white rounded-tr-none';
+            if (type === 'success') bgClass = 'bg-emerald-50 text-emerald-900 border border-emerald-100';
+            if (type === 'hint') bgClass = 'bg-amber-50 text-amber-900 border border-amber-100';
+
+            div.innerHTML = `
+                <div class="max-w-[85%] p-4 rounded-2xl shadow-sm ${bgClass}">
+                    <div class="text-[10px] uppercase font-bold opacity-50 mb-1">${role === 'user' ? 'Ти' : 'Репетитор'}</div>
+                    <div class="text-sm leading-relaxed">${formatMath(text).replace(/\n/g, '<br>')}</div>
+                    ${type === 'init' ? createGraph(activeTask, false) : ''}
+                    ${type === 'success' ? createGraph(activeTask, true) : ''}
+                </div>
+            `;
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function initTasks() {
+            const renderBtn = (task, container) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-2xl transition-all border border-slate-200 bg-white hover:bg-indigo-50 active:scale-[0.98]";
+                btn.innerHTML = `<div class="text-sm font-bold">${task.title}</div><div class="text-[10px] mt-1 opacity-70 line-clamp-1">${task.condition}</div>`;
+                btn.onclick = () => startTask(task.id);
+                container.appendChild(btn);
+            };
+
+            TASKS.forEach(t => {
+                renderBtn(t, taskList);
+                renderBtn(t, taskListMobile);
+            });
+        }
+
+        function startTask(id) {
+            activeTask = TASKS.find(t => t.id === id);
+            isSolved = false;
+            hintIndex = 0;
+            score = 11;
+            
+            document.getElementById('placeholder').style.display = 'none';
+            document.getElementById('mobile-start').style.display = 'none';
+            document.getElementById('chat-wrapper').classList.remove('hidden');
+            scoreDisplay.classList.remove('hidden');
+            
+            chatContainer.innerHTML = '';
+            currentScoreSpan.innerText = `11 / 11`;
+            hintCostSpan.innerText = "FREE";
+            
+            addMessage('tutor', `Давай розв'яжемо задачу "${activeTask.title}".\n\nУмова: ${activeTask.condition}\n\nЯкий твій перший крок?`, 'init');
+        }
+
+        function handleSend() {
+            const val = userInput.value.trim();
+            if (!val || isSolved) return;
+
+            addMessage('user', val);
+            userInput.value = '';
+
+            const numbers = val.match(/\d+/g);
+            const isCorrect = numbers && numbers.some(n => parseInt(n) === activeTask.answer);
+
+            setTimeout(() => {
+                if (isCorrect) {
+                    isSolved = true;
+                    addMessage('tutor', `🎉 Вірно! Відповідь ${activeTask.answer} правильна.\n\nТвій підсумковий результат: ${score} балів!`, 'success');
+                    addMessage('tutor', `Пояснення:\n${activeTask.explanation}`);
+                } else {
+                    addMessage('tutor', "На жаль, число невірне. Спробуй ще раз або скористайся підказкою 💡");
+                }
+            }, 500);
+        }
+
+        function getHint() {
+            if (!activeTask || isSolved || hintIndex >= activeTask.hints.length) return;
+
+            let deduction = hintIndex === 0 ? 0 : 2;
+            score = Math.max(0, score - deduction);
+            
+            const costMsg = deduction > 0 ? `(Знято ${deduction} бали)` : "(Перша підказка — безкоштовна)";
+            addMessage('tutor', `💡 Підказка: ${activeTask.hints[hintIndex]}\n${costMsg}`, 'hint');
+            
+            hintIndex++;
+            currentScoreSpan.innerText = `${score} / 11`;
+            hintCostSpan.innerText = hintIndex === 0 ? "FREE" : "-2 pts";
+            
+            if (hintIndex >= activeTask.hints.length) {
+                hintBtn.disabled = true;
+                hintBtn.style.opacity = "0.2";
+            }
+        }
+
+        sendBtn.onclick = handleSend;
+        hintBtn.onclick = getHint;
+        userInput.onkeypress = (e) => e.key === 'Enter' && handleSend();
+
+        initTasks();
+    </script>
+</body>
+</html>
