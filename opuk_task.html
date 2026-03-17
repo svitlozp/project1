@@ -2,25 +2,25 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>3D Місія: Геометричний Патруль Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #f8fafc; }
+        body { margin: 0; overflow: hidden; background-color: #f8fafc; touch-action: none; }
         canvas { display: block; }
         .hud-glass {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         }
         .math-font { font-family: 'Fira Code', monospace; }
         .certificate-bg {
             background: white;
             background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
-            background-size: 24px 24px;
+            background-size: 20px 20px;
         }
         @keyframes scan-line {
             0% { transform: translateY(-100%); opacity: 0; }
@@ -31,133 +31,115 @@
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(to bottom, transparent, rgba(99, 102, 241, 0.2), transparent);
+            background: linear-gradient(to bottom, transparent, rgba(99, 102, 241, 0.1), transparent);
             animation: scan-line 2s infinite linear;
         }
+        /* Усунення затримки кліку на мобільних */
+        button { touch-action: manipulation; }
     </style>
 </head>
 <body class="text-slate-900 font-sans select-none">
 
     <!-- UI Overlay -->
-    <div id="ui-layer" class="absolute inset-0 pointer-events-none flex flex-col justify-between p-6 z-10">
+    <div id="ui-layer" class="absolute inset-0 pointer-events-none flex flex-col justify-between p-3 sm:p-6 z-10">
         
         <!-- Header: Mission Progress -->
-        <div class="flex justify-between items-start pointer-events-auto">
-            <div class="hud-glass p-5 rounded-[2rem] max-w-sm border-b-4 border-indigo-200">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-lg">
-                        <i data-lucide="cpu"></i>
+        <div class="flex justify-between items-start pointer-events-auto gap-2">
+            <div class="hud-glass p-3 sm:p-5 rounded-2xl sm:rounded-[2rem] max-w-[180px] sm:max-w-sm border-b-2 sm:border-b-4 border-indigo-200">
+                <div class="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4">
+                    <div class="bg-indigo-600 p-1.5 sm:p-2 rounded-lg text-white shadow-lg">
+                        <i data-lucide="cpu" class="w-4 h-4 sm:w-5 sm:h-5"></i>
                     </div>
-                    <div>
-                        <h1 class="font-black text-sm uppercase tracking-tighter">Сенсорний модуль</h1>
-                        <div class="flex items-center gap-1.5 text-[9px] text-emerald-600 font-bold uppercase">
-                            <span class="relative flex h-2 w-2">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                            </span>
-                            Система активна
-                        </div>
-                    </div>
+                    <h1 class="font-black text-[10px] sm:text-sm uppercase tracking-tighter leading-none">Сенсори</h1>
                 </div>
-                <div id="coords-panel" class="space-y-2">
-                    <div class="flex justify-between px-3 py-2 bg-slate-100 rounded-xl">
-                        <span class="text-[9px] font-black text-slate-400 uppercase">Позиція B</span>
-                        <span id="coord-b" class="font-mono text-indigo-700 font-bold text-xs">(0, 0)</span>
+                <div id="coords-panel" class="space-y-1 sm:space-y-2">
+                    <div class="flex justify-between px-2 py-1 bg-slate-100/50 rounded-lg">
+                        <span class="text-[8px] font-black text-slate-400 uppercase">Pos B</span>
+                        <span id="coord-b" class="font-mono text-indigo-700 font-bold text-[10px] sm:text-xs">(0, 0)</span>
                     </div>
-                    <div class="flex justify-between px-3 py-2 bg-rose-50 rounded-xl border border-rose-100 relative overflow-hidden scanner">
-                        <span class="text-[9px] font-black text-rose-400 uppercase italic">Ціль C (Прихована)</span>
-                        <span id="coord-c" class="font-mono text-rose-600 font-bold text-xs">SCANNING...</span>
+                    <div class="flex justify-between px-2 py-1 bg-rose-50/50 rounded-lg border border-rose-100 relative overflow-hidden scanner">
+                        <span class="text-[8px] font-black text-rose-400 uppercase italic">Target C</span>
+                        <span id="coord-c" class="font-mono text-rose-600 font-bold text-[10px] sm:text-xs">SCAN...</span>
                     </div>
                 </div>
             </div>
 
-            <div class="hud-glass px-8 py-5 rounded-[2rem] flex flex-col items-center border-b-4 border-slate-200">
-                <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Прогрес</div>
-                <div id="score" class="text-4xl font-black text-slate-800">0 / 11</div>
-                <div class="w-32 h-2 bg-slate-100 rounded-full mt-3 overflow-hidden p-0.5">
-                    <div id="progress-bar-fill" class="h-full bg-indigo-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+            <div class="hud-glass px-4 py-3 sm:px-8 sm:py-5 rounded-2xl sm:rounded-[2rem] flex flex-col items-center border-b-2 sm:border-b-4 border-slate-200">
+                <div class="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Прогрес</div>
+                <div id="score" class="text-xl sm:text-4xl font-black text-slate-800">0 / 11</div>
+                <div class="w-16 sm:w-32 h-1 sm:h-2 bg-slate-100 rounded-full mt-2 overflow-hidden">
+                    <div id="progress-bar-fill" class="h-full bg-indigo-600 transition-all duration-300" style="width: 0%"></div>
                 </div>
             </div>
         </div>
 
         <!-- Feedback Area -->
         <div class="self-center pointer-events-auto">
-            <div id="feedback-message" class="opacity-0 transition-all duration-300 transform translate-y-4 px-10 py-3 rounded-full font-black text-sm shadow-2xl border-2 bg-white">
-                Чекаю на розрахунки...
+            <div id="feedback-message" class="opacity-0 transition-all duration-300 transform translate-y-4 px-6 py-2 sm:px-10 sm:py-3 rounded-full font-black text-[10px] sm:text-sm shadow-xl border-2 bg-white/90">
+                Розрахунок...
             </div>
         </div>
 
         <!-- Logic Controls -->
-        <div id="controls-area" class="pointer-events-auto flex flex-col items-center gap-4 w-full">
+        <div id="controls-area" class="pointer-events-auto flex flex-col items-center gap-2 sm:gap-4 w-full">
             
-            <div id="decision-panel" class="hud-glass p-8 rounded-[3rem] flex flex-col lg:flex-row items-center gap-10 shadow-2xl border border-white w-full max-w-5xl">
-                <div class="flex-1">
-                    <div class="flex items-center gap-2 mb-2">
-                        <i data-lucide="binary" class="w-4 h-4 text-slate-400"></i>
-                        <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Математичний предиктор</h2>
-                    </div>
-                    <div id="math-display" class="bg-slate-900 text-slate-300 px-6 py-5 rounded-3xl font-mono text-[14px] shadow-2xl border border-white/5">
+            <div id="decision-panel" class="hud-glass p-3 sm:p-6 rounded-3xl sm:rounded-[3rem] flex flex-col items-center gap-3 sm:gap-6 shadow-2xl border border-white w-full max-w-4xl">
+                <div class="w-full">
+                    <div id="math-display" class="bg-slate-900 text-slate-300 px-4 py-3 sm:px-6 sm:py-4 rounded-2xl sm:rounded-3xl font-mono text-[10px] sm:text-[14px] shadow-2xl border border-white/5 text-center">
                         D = (x<sub>B</sub>-x<sub>A</sub>)(z<sub>C</sub>-z<sub>B</sub>) - (z<sub>B</sub>-z<sub>A</sub>)(x<sub>C</sub>-x<sub>B</sub>)
                     </div>
                 </div>
-                <div class="flex gap-4">
-                    <button onclick="makeDecision('left')" class="group flex flex-col items-center gap-2 px-10 py-6 bg-indigo-600 text-white rounded-[2.5rem] font-black shadow-xl hover:bg-indigo-500 transition-all active:scale-90">
-                        <i data-lucide="arrow-up-left" class="w-8 h-8"></i>
-                        <span class="uppercase tracking-widest text-xs">Ліворуч</span>
+                <div class="flex gap-2 sm:gap-4 w-full justify-center">
+                    <button onclick="makeDecision('left')" class="flex-1 max-w-[120px] flex flex-col items-center gap-1 p-3 sm:p-5 bg-indigo-600 text-white rounded-2xl sm:rounded-[2rem] font-black shadow-lg hover:bg-indigo-500 transition-all active:scale-90">
+                        <i data-lucide="arrow-up-left" class="w-5 h-5 sm:w-8 sm:h-8"></i>
+                        <span class="uppercase tracking-widest text-[8px] sm:text-[10px]">Ліво</span>
                     </button>
-                    <button onclick="makeDecision('straight')" class="group flex flex-col items-center gap-2 px-10 py-6 bg-slate-800 text-white rounded-[2.5rem] font-black shadow-xl hover:bg-slate-700 transition-all active:scale-90">
-                        <i data-lucide="arrow-up" class="w-8 h-8"></i>
-                        <span class="uppercase tracking-widest text-xs">Прямо</span>
+                    <button onclick="makeDecision('straight')" class="flex-1 max-w-[120px] flex flex-col items-center gap-1 p-3 sm:p-5 bg-slate-800 text-white rounded-2xl sm:rounded-[2rem] font-black shadow-lg hover:bg-slate-700 transition-all active:scale-90">
+                        <i data-lucide="arrow-up" class="w-5 h-5 sm:w-8 sm:h-8"></i>
+                        <span class="uppercase tracking-widest text-[8px] sm:text-[10px]">Прямо</span>
                     </button>
-                    <button onclick="makeDecision('right')" class="group flex flex-col items-center gap-2 px-10 py-6 bg-rose-600 text-white rounded-[2.5rem] font-black shadow-xl hover:bg-rose-500 transition-all active:scale-90">
-                        <i data-lucide="arrow-up-right" class="w-8 h-8"></i>
-                        <span class="uppercase tracking-widest text-xs">Праворуч</span>
+                    <button onclick="makeDecision('right')" class="flex-1 max-w-[120px] flex flex-col items-center gap-1 p-3 sm:p-5 bg-rose-600 text-white rounded-2xl sm:rounded-[2rem] font-black shadow-lg hover:bg-rose-500 transition-all active:scale-90">
+                        <i data-lucide="arrow-up-right" class="w-5 h-5 sm:w-8 sm:h-8"></i>
+                        <span class="uppercase tracking-widest text-[8px] sm:text-[10px]">Право</span>
                     </button>
                 </div>
             </div>
 
-            <div id="quiz-panel" class="hidden hud-glass p-10 rounded-[3rem] flex flex-col items-center gap-8 shadow-2xl border-4 border-indigo-100 w-full max-w-2xl">
+            <div id="quiz-panel" class="hidden hud-glass p-5 sm:p-10 rounded-3xl sm:rounded-[3rem] flex flex-col items-center gap-4 sm:gap-8 shadow-2xl border-2 sm:border-4 border-indigo-100 w-full max-w-xl">
                 <div class="text-center">
-                    <h2 class="text-2xl font-black text-slate-800 mb-3">Патрулювання завершено</h2>
-                    <p class="text-slate-500 text-sm">Проаналізуйте траєкторію робота зверху.<br><b>Чи є цей маршрут опуклим багатокутником?</b></p>
+                    <h2 class="text-lg sm:text-2xl font-black text-slate-800 mb-1 sm:mb-3 leading-tight">Місія завершена</h2>
+                    <p class="text-slate-500 text-[10px] sm:text-sm leading-tight">Чи є цей маршрут <b>опуклим</b>?</p>
                 </div>
-                <div class="flex gap-4 w-full">
-                    <button onclick="answerQuiz(true)" class="flex-1 py-5 bg-emerald-600 text-white rounded-3xl font-black shadow-lg hover:bg-emerald-500 transition-all active:scale-95">ТАК, ОПУКЛИЙ</button>
-                    <button onclick="answerQuiz(false)" class="flex-1 py-5 bg-rose-600 text-white rounded-3xl font-black shadow-lg hover:bg-rose-500 transition-all active:scale-95">НІ, НЕОПУКЛИЙ</button>
+                <div class="flex gap-2 sm:gap-4 w-full">
+                    <button onclick="answerQuiz(true)" class="flex-1 py-3 sm:py-5 bg-emerald-600 text-white rounded-2xl sm:rounded-3xl font-black shadow-lg hover:bg-emerald-500 transition-all text-xs sm:text-base">ТАК</button>
+                    <button onclick="answerQuiz(false)" class="flex-1 py-3 sm:py-5 bg-rose-600 text-white rounded-2xl sm:rounded-3xl font-black shadow-lg hover:bg-rose-500 transition-all text-xs sm:text-base">НІ</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Final Certificate -->
-    <div id="certificate-overlay" class="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-50 flex items-center justify-center hidden p-6">
-        <div class="certificate-bg w-full max-w-3xl p-16 rounded-[3rem] border-[12px] border-double border-indigo-600 shadow-2xl relative flex flex-col items-center text-center">
-            <div class="absolute top-10 right-10 opacity-10"><i data-lucide="award" class="w-48 h-48"></i></div>
-            <h1 class="text-5xl font-black text-slate-900 mb-2 italic">CERTIFICATE</h1>
-            <p class="text-indigo-600 font-black tracking-[0.5em] text-sm mb-12 uppercase">Computational Geometry Excellence</p>
-            
-            <div class="w-full h-px bg-slate-200 mb-10"></div>
-            
-            <p class="text-lg text-slate-500 mb-2">Це підтверджує, що оператор успішно проклав маршрут через 11 точок та виконав фінальний аналіз опуклості за темою:</p>
-            <p class="text-3xl font-black text-slate-900 mb-12 leading-tight">Векторний добуток та <br>навігація автономних систем</p>
-            
-            <div class="flex gap-20 mb-12">
+    <div id="certificate-overlay" class="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-50 flex items-center justify-center hidden p-4">
+        <div class="certificate-bg w-full max-w-2xl p-6 sm:p-12 rounded-3xl border-4 sm:border-[10px] border-indigo-600 shadow-2xl relative flex flex-col items-center text-center">
+            <h1 class="text-2xl sm:text-4xl font-black text-slate-900 mb-1 italic">СЕРТИФІКАТ</h1>
+            <p class="text-indigo-600 font-black tracking-widest text-[8px] sm:text-xs mb-4 sm:mb-8 uppercase">Експерт з обчислювальної геометрії</p>
+            <div class="w-full h-px bg-slate-200 mb-4 sm:mb-8"></div>
+            <p class="text-xs sm:text-sm text-slate-500 mb-4 leading-tight">Підтверджено успішне проходження патрулювання через 11 точок та фінальний аналіз опуклості.</p>
+            <div class="flex gap-10 sm:gap-16 mb-6 sm:mb-10">
                 <div class="flex flex-col">
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Підсумкова оцінка</span>
-                    <span id="final-grade" class="text-6xl font-black text-indigo-600">12</span>
+                    <span class="text-[8px] font-black text-slate-400 uppercase mb-1">Оцінка</span>
+                    <span id="final-grade" class="text-3xl sm:text-5xl font-black text-indigo-600">12</span>
                 </div>
                 <div class="flex flex-col">
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Точність розрахунків</span>
-                    <span id="final-score" class="text-6xl font-black text-slate-800">11/11</span>
+                    <span class="text-[8px] font-black text-slate-400 uppercase mb-1">Точність</span>
+                    <span id="final-score" class="text-3xl sm:text-5xl font-black text-slate-800">11/11</span>
                 </div>
             </div>
-
-            <button onclick="location.reload()" class="px-12 py-5 bg-slate-900 text-white rounded-3xl font-black hover:bg-black transition-all shadow-2xl">НОВА МІСІЯ</button>
+            <button onclick="location.reload()" class="px-8 py-3 sm:px-12 sm:py-4 bg-slate-900 text-white rounded-2xl font-black hover:bg-black transition-all">НОВА МІСІЯ</button>
         </div>
     </div>
 
     <script>
-        // --- Core Configuration ---
         const TARGET_SCORE = 11;
         const WORLD_STEP = 4;
         let state = {
@@ -173,34 +155,32 @@
             mode: 'MISSION'
         };
 
-        // --- Three.js Engine ---
         let scene, camera, renderer, robot, targetPoint, pathLine, activeVectorsLine, fogSphere;
         let clock = new THREE.Clock();
 
         function init3D() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0xf1f5f9);
-            scene.fog = new THREE.Fog(0xf1f5f9, 40, 100);
+            scene.fog = new THREE.Fog(0xf1f5f9, 30, 90);
 
-            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const aspect = window.innerWidth / window.innerHeight;
+            camera = new THREE.PerspectiveCamera(aspect < 1 ? 55 : 40, aspect, 0.1, 1000);
+            
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
             document.body.appendChild(renderer.domElement);
 
             scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-            const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+            const sun = new THREE.DirectionalLight(0xffffff, 1.1);
             sun.position.set(20, 50, 20);
             sun.castShadow = true;
             scene.add(sun);
 
             scene.add(new THREE.GridHelper(200, 50, 0xd1d5db, 0xe2e8f0));
 
-            const floor = new THREE.Mesh(
-                new THREE.PlaneGeometry(200, 200),
-                new THREE.MeshPhongMaterial({ color: 0xf8fafc })
-            );
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshPhongMaterial({ color: 0xf8fafc }));
             floor.rotation.x = -Math.PI / 2;
             floor.receiveShadow = true;
             scene.add(floor);
@@ -208,31 +188,18 @@
             pathLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x6366f1, linewidth: 3 }));
             scene.add(pathLine);
 
-            activeVectorsLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xf43f5e, linewidth: 8 }));
+            activeVectorsLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xf43f5e, linewidth: 6 }));
             scene.add(activeVectorsLine);
 
             robot = createRobot();
             scene.add(robot);
 
-            // Target Point
-            targetPoint = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.5, 0.5, 0.2, 32),
-                new THREE.MeshPhongMaterial({ color: 0xf43f5e, emissive: 0xf43f5e, emissiveIntensity: 1 })
-            );
+            targetPoint = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.2, 32), new THREE.MeshPhongMaterial({ color: 0xf43f5e, emissive: 0xf43f5e }));
             scene.add(targetPoint);
 
-            // "Fog of War" sphere to hide exact visual location
-            const fogGeo = new THREE.SphereGeometry(2, 32, 32);
-            const fogMat = new THREE.MeshPhongMaterial({ 
-                color: 0xcbd5e1, 
-                transparent: true, 
-                opacity: 0.6,
-                flatShading: true
-            });
-            fogSphere = new THREE.Mesh(fogGeo, fogMat);
+            fogSphere = new THREE.Mesh(new THREE.SphereGeometry(2.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0xcbd5e1, transparent: true, opacity: 0.5 }));
             scene.add(fogSphere);
 
-            camera.position.set(0, 40, 40);
             generateNextC();
             updatePathVisual();
             animate();
@@ -240,72 +207,50 @@
 
         function createRobot() {
             const group = new THREE.Group();
-            const body = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.8, 2.0), new THREE.MeshPhongMaterial({ color: 0x334155 }));
-            body.position.y = 0.6; group.add(body);
-            const shell = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.4, 1.8), new THREE.MeshPhongMaterial({ color: 0x4f46e5 }));
+            const body = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 1.8), new THREE.MeshPhongMaterial({ color: 0x334155 }));
+            body.position.y = 0.5; body.castShadow = true; group.add(body);
+            const shell = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.3, 1.6), new THREE.MeshPhongMaterial({ color: 0x4f46e5 }));
             shell.position.y = 1.0; group.add(shell);
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.4), new THREE.MeshPhongMaterial({ color: 0xffffff }));
-            head.position.set(0, 1.4, 0.6); group.add(head);
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshPhongMaterial({ color: 0xffffff }));
+            head.position.set(0, 1.3, 0.5); group.add(head);
             return group;
         }
 
         function generateNextC() {
-            if (state.score >= TARGET_SCORE) {
-                startReturnProcess();
-                return;
-            }
-
-            const range = 7;
+            if (state.score >= TARGET_SCORE) { startReturnProcess(); return; }
+            const range = 6;
             state.pointC = {
                 x: state.pointB.x + (Math.floor(Math.random() * (range * 2 + 1)) - range),
                 z: state.pointB.z + (Math.floor(Math.random() * (range * 2 + 1)) - range)
             };
-
             if (state.pointC.x === state.pointB.x && state.pointC.z === state.pointB.z) return generateNextC();
-
-            // Setup Target Visually (Hidden by Fog)
             targetPoint.position.set(state.pointC.x * WORLD_STEP, 0.1, state.pointC.z * WORLD_STEP);
             targetPoint.visible = false;
-            
             fogSphere.position.set(state.pointC.x * WORLD_STEP, 1, state.pointC.z * WORLD_STEP);
             fogSphere.visible = true;
-
             updateHUD();
         }
 
         function updateHUD() {
             document.getElementById('coord-b').textContent = `(${state.pointB.x}, ${state.pointB.z})`;
-            document.getElementById('coord-c').textContent = `(${state.pointC.x}, ${state.pointC.z})`;
-
             const v1 = { x: state.pointB.x - state.pointA.x, z: state.pointB.z - state.pointA.z };
             const v2 = { x: state.pointC.x - state.pointB.x, z: state.pointC.z - state.pointB.z };
             const d = v1.x * (-v2.z) - (-v1.z) * v2.x;
             state.calculatedD = d;
-
-            document.getElementById('math-display').innerHTML = `
-                v₁ = (${v1.x}, ${-v1.z}) | v₂ = (${v2.x}, ${-v2.z}) <br>
-                D = (${v1.x})&middot;(${-v2.z}) - (${-v1.z})&middot;(${v2.x}) = <span class="text-white font-bold bg-white/10 px-2 rounded">${d}</span>
-            `;
+            document.getElementById('math-display').innerHTML = `v₁:(${v1.x},${-v1.z}) | v₂:(${v2.x},${-v2.z}) <br class="sm:hidden"> D = <b>${d}</b>`;
         }
 
         function makeDecision(choice) {
             if (state.isMoving || state.mode !== 'MISSION') return;
             const d = state.calculatedD;
             let correct = d > 0 ? 'left' : (d < 0 ? 'right' : 'straight');
-
-            // Reveal Target
-            targetPoint.visible = true;
-            fogSphere.visible = false;
-
+            targetPoint.visible = true; fogSphere.visible = false;
             if (choice === correct) {
-                showFeedback(`ВІРНО! +1 БАЛ`, "bg-emerald-500 text-white border-emerald-600");
-                state.score++;
-                updateScoreUI();
-                executeMove();
+                showFeedback(`ВІРНО! +1`, "bg-emerald-500 text-white border-emerald-600");
+                state.score++; updateScoreUI(); executeMove();
             } else {
-                showFeedback(`ПОМИЛКА! РУХ БЕЗ БАЛІВ.`, "bg-rose-500 text-white border-rose-600");
-                state.mistakes++;
-                executeMove();
+                showFeedback(`ПОМИЛКА!`, "bg-rose-500 text-white border-rose-600");
+                state.mistakes++; executeMove();
             }
         }
 
@@ -313,68 +258,44 @@
             state.isMoving = true;
             const startPos = { ...robot.position };
             const targetPos = { x: state.pointC.x * WORLD_STEP, z: state.pointC.z * WORLD_STEP };
-            
             robot.lookAt(targetPos.x, 0.6, targetPos.z);
-
-            let elapsed = 0;
-            const duration = 0.35; // ДУЖЕ ШВИДКО
+            let elapsed = 0; const duration = 0.3; // ШВИДКО
 
             function step() {
-                const delta = clock.getDelta();
-                elapsed += delta;
+                elapsed += clock.getDelta();
                 const t = Math.min(elapsed / duration, 1);
                 const ease = t < 0.5 ? 2*t*t : 1-Math.pow(-2*t+2, 2)/2;
-
                 robot.position.x = startPos.x + (targetPos.x - startPos.x) * ease;
                 robot.position.z = startPos.z + (targetPos.z - startPos.z) * ease;
                 robot.position.y = Math.abs(Math.sin(ease * Math.PI)) * 0.4;
-
-                if (t < 1) {
-                    requestAnimationFrame(step);
-                } else {
-                    state.pointA = { ...state.pointB };
-                    state.pointB = { ...state.pointC };
-                    state.pathPoints.push({ ...state.pointC });
-                    state.fullHistory.push({ ...state.pointC });
-                    updatePathVisual();
-                    state.isMoving = false;
-                    generateNextC();
+                if (t < 1) { requestAnimationFrame(step); } 
+                else {
+                    state.pointA = { ...state.pointB }; state.pointB = { ...state.pointC };
+                    state.pathPoints.push({ ...state.pointC }); state.fullHistory.push({ ...state.pointC });
+                    updatePathVisual(); state.isMoving = false; generateNextC();
                 }
             }
             clock.getDelta(); step();
         }
 
         function startReturnProcess() {
-            state.mode = 'RETURN';
-            state.isMoving = true;
+            state.mode = 'RETURN'; state.isMoving = true;
             document.getElementById('decision-panel').style.display = 'none';
-            showFeedback("ВЕРТАЄМОСЬ ДО (0, 0)...", "bg-indigo-600 text-white border-indigo-700");
-
-            const startPos = { ...robot.position };
-            const targetPos = { x: 0, z: 0 };
+            showFeedback("ВЕРТАЄМОСЬ...", "bg-indigo-600 text-white border-indigo-700");
+            const startPos = { ...robot.position }; const targetPos = { x: 0, z: 0 };
             robot.lookAt(0, 0.6, 0);
-            
-            let elapsed = 0;
-            const duration = 0.8;
-
+            let elapsed = 0; const duration = 0.6;
             function step() {
                 elapsed += clock.getDelta();
                 const t = Math.min(elapsed / duration, 1);
                 robot.position.x = startPos.x + (targetPos.x - startPos.x) * t;
                 robot.position.z = startPos.z + (targetPos.z - startPos.z) * t;
-
-                if (t < 1) {
-                    requestAnimationFrame(step);
-                } else {
-                    state.pathPoints.push({ x: 0, z: 0 });
-                    state.fullHistory.push({ x: 0, z: 0 });
-                    updatePathVisual();
-                    state.isMoving = false;
-                    state.mode = 'QUIZ';
-                    targetPoint.visible = false;
-                    fogSphere.visible = false;
+                if (t < 1) { requestAnimationFrame(step); } 
+                else {
+                    state.pathPoints.push({ x: 0, z: 0 }); state.fullHistory.push({ x: 0, z: 0 });
+                    updatePathVisual(); state.isMoving = false; state.mode = 'QUIZ';
+                    targetPoint.visible = false; fogSphere.visible = false;
                     document.getElementById('quiz-panel').classList.remove('hidden');
-                    document.getElementById('coords-panel').classList.add('opacity-0');
                 }
             }
             clock.getDelta(); step();
@@ -391,21 +312,15 @@
                 const d = v1.x * (-v2.z) - (-v1.z) * v2.x;
                 if (Math.abs(d) > 0.1) signs.push(d > 0 ? 1 : -1);
             }
-            
             const firstSign = signs[0];
             const isConvex = signs.every(s => s === firstSign);
-
-            if (userSaysConvex === isConvex) {
-                showCertificate();
-            } else {
-                showFeedback("ПОМИЛКА В АНАЛІЗІ! СПРОБУЙТЕ ЗАНОВО.", "bg-rose-700 text-white border-rose-900");
-                setTimeout(() => location.reload(), 3000);
-            }
+            if (userSaysConvex === isConvex) { showCertificate(); } 
+            else { showFeedback("ПОМИЛКА! ЗАНОВО.", "bg-rose-700 text-white"); setTimeout(() => location.reload(), 2000); }
         }
 
         function showCertificate() {
             state.mode = 'RESULT';
-            const grade = Math.max(1, 12 - Math.floor(state.mistakes / 2));
+            const grade = Math.max(1, 12 - Math.floor(state.mistakes / 1.5));
             document.getElementById('final-grade').textContent = grade;
             document.getElementById('final-score').textContent = `11/${11 + state.mistakes}`;
             document.getElementById('certificate-overlay').classList.remove('hidden');
@@ -424,29 +339,20 @@
 
         function showFeedback(msg, style) {
             const el = document.getElementById('feedback-message');
-            el.textContent = msg;
-            el.className = `px-10 py-3 rounded-2xl font-black text-sm shadow-2xl border-b-4 ${style}`;
+            el.textContent = msg; el.className = `px-6 py-2 sm:px-10 sm:py-3 rounded-full font-black text-[10px] sm:text-sm shadow-2xl border-b-4 ${style}`;
             el.style.opacity = '1'; el.style.transform = 'translateY(0)';
-            setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(16px)'; }, 2500);
+            setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(16px)'; }, 2000);
         }
 
         function animate() {
             requestAnimationFrame(animate);
-            
-            // Camera Zoom Out for Quiz
-            let targetHeight = state.mode === 'QUIZ' ? 70 : 45;
-            let targetDist = state.mode === 'QUIZ' ? 2 : 45;
+            const aspect = window.innerWidth / window.innerHeight;
+            let targetHeight = state.mode === 'QUIZ' ? 60 : (aspect < 1 ? 60 : 40);
+            let targetDist = state.mode === 'QUIZ' ? 2 : (aspect < 1 ? 30 : 40);
             const offset = new THREE.Vector3(0, targetHeight, targetDist);
-            const targetCamPos = robot.position.clone().add(offset);
-            camera.position.lerp(targetCamPos, 0.15);
-            camera.lookAt(robot.position.x, 0, robot.position.z - 5);
-            
-            // Fog Animation
-            if (fogSphere.visible) {
-                fogSphere.rotation.y += 0.02;
-                fogSphere.scale.setScalar(1 + Math.sin(Date.now() * 0.005) * 0.1);
-            }
-            
+            camera.position.lerp(robot.position.clone().add(offset), 0.2);
+            camera.lookAt(robot.position.x, 0, robot.position.z - (aspect < 1 ? 10 : 5));
+            if (fogSphere.visible) { fogSphere.scale.setScalar(1 + Math.sin(Date.now() * 0.005) * 0.1); }
             renderer.render(scene, camera);
         }
 
