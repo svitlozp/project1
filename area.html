@@ -1,1 +1,368 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лабораторія: Площа многокутника</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .dot-grid {
+            background-image: radial-gradient(#e2e8f0 1.5px, transparent 1.5px);
+            background-size: 40px 40px;
+        }
+        .math-font { font-family: 'Fira Code', monospace; }
+        .positive-area { fill: rgba(16, 185, 129, 0.25); stroke: #10b981; }
+        .negative-area { fill: rgba(239, 68, 68, 0.25); stroke: #ef4444; }
+        sub { font-size: 0.7em; }
+        .pulse-hint { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans min-h-screen flex flex-col">
 
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 p-4 flex justify-between items-center shadow-sm z-20">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-lg">
+                <i data-lucide="layout-template"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-none">Обчислення площі</h1>
+                <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1">Конструктор многокутників</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="text-right">
+                <p class="text-[9px] font-bold text-slate-400 uppercase">S (Фінальна)</p>
+                <p id="total-area-val" class="text-xl font-black text-indigo-600">0.0</p>
+            </div>
+            <button onclick="clearPoints()" class="p-2 hover:bg-rose-50 text-rose-400 rounded-full transition-colors" title="Очистити все">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </button>
+            <button onclick="resetPoints()" class="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400" title="Стандартний приклад">
+                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-full md:w-[420px] bg-white border-r border-slate-200 flex flex-col shadow-sm z-10">
+            <div class="p-6 flex-1 overflow-y-auto">
+                <div id="step-content">
+                    <!-- Dynamic Step Content -->
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <span id="step-indicator" class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Крок 1</span>
+                    <div class="flex gap-1" id="dots-container"></div>
+                </div>
+                <div class="flex gap-2">
+                    <button id="prev-btn" onclick="changeStep(-1)" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition-all">
+                        <i data-lucide="chevron-left" class="w-4 h-4"></i> Назад
+                    </button>
+                    <button id="next-btn" onclick="changeStep(1)" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 rounded-xl text-sm font-bold text-white hover:bg-indigo-700 shadow-lg transition-all">
+                        Далі <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="flex-1 relative dot-grid bg-slate-100 flex items-center justify-center p-4">
+            <div class="relative bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden" style="width: 600px; height: 600px;">
+                <svg id="field" width="600" height="600" viewBox="0 0 600 600" class="select-none cursor-crosshair">
+                    
+                    <!-- Grid System -->
+                    <g id="grid-layer"></g>
+
+                    <!-- Coordinate Axes -->
+                    <line x1="50" y1="50" x2="50" y2="550" stroke="#475569" stroke-width="3" />
+                    <line x1="50" y1="550" x2="550" y2="550" stroke="#475569" stroke-width="3" />
+                    
+                    <!-- Shoelace Step Visualization -->
+                    <polygon id="step-triangle" points="" fill="none" stroke-width="3" stroke-dasharray="8 4" />
+                    
+                    <!-- Main Polygon -->
+                    <polygon id="main-polygon" points="" fill="rgba(99, 102, 241, 0.1)" stroke="#6366f1" stroke-width="2.5" />
+
+                    <!-- Vertices -->
+                    <g id="points-layer"></g>
+
+                    <!-- Origin -->
+                    <circle cx="50" cy="550" r="5" fill="#ef4444" />
+                    <text x="35" y="575" class="text-[12px] font-black fill-slate-500">(0,0)</text>
+                </svg>
+
+                <div id="instruction-hint" class="absolute top-6 right-6 bg-indigo-600 px-4 py-1.5 rounded-full text-[10px] font-bold text-white uppercase tracking-widest shadow-lg pulse-hint pointer-events-none transition-opacity duration-300">
+                    Клікніть на сітку, щоб додати точку
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const STEP_PX = 40;
+        const OFFSET_X = 50;
+        const OFFSET_Y = 550;
+        const MAX_GRID = 12;
+
+        let currentStep = 0;
+        let points = [
+            { x: 2, y: 2 },
+            { x: 8, y: 2 },
+            { x: 8, y: 7 },
+            { x: 2, y: 7 }
+        ];
+
+        const toPxX = (x) => OFFSET_X + x * STEP_PX;
+        const toPxY = (y) => OFFSET_Y - y * STEP_PX;
+        const fromPxX = (px) => Math.round((px - OFFSET_X) / STEP_PX);
+        const fromPxY = (py) => Math.round((OFFSET_Y - py) / STEP_PX);
+
+        function init() {
+            lucide.createIcons();
+            drawGrid();
+            updateUI();
+            
+            const svg = document.getElementById('field');
+            let dragging = null;
+
+            const handlePointerDown = (e) => {
+                const rect = svg.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                
+                // Перевіряємо, чи ми затисли існуючу точку
+                let foundPoint = -1;
+                points.forEach((p, i) => {
+                    const dx = toPxX(p.x) - mx;
+                    const dy = toPxY(p.y) - my;
+                    if(Math.sqrt(dx*dx + dy*dy) < 25) foundPoint = i;
+                });
+
+                if (foundPoint !== -1) {
+                    dragging = foundPoint;
+                } else if (currentStep === 0) {
+                    // Якщо в режимі конструктора і клікнули на вільне місце - додаємо точку
+                    const gx = fromPxX(mx);
+                    const gy = fromPxY(my);
+                    
+                    if (gx >= 0 && gx <= MAX_GRID && gy >= 0 && gy <= MAX_GRID) {
+                        if (points.length < 12) {
+                            points.push({ x: gx, y: gy });
+                            updateUI();
+                        }
+                    }
+                }
+            };
+
+            const handlePointerMove = (e) => {
+                if(dragging !== null) {
+                    const rect = svg.getBoundingClientRect();
+                    let gx = fromPxX(e.clientX - rect.left);
+                    let gy = fromPxY(e.clientY - rect.top);
+                    
+                    gx = Math.max(0, Math.min(MAX_GRID, gx));
+                    gy = Math.max(0, Math.min(MAX_GRID, gy));
+                    
+                    points[dragging].x = gx;
+                    points[dragging].y = gy;
+                    updateUI();
+                }
+            };
+
+            svg.addEventListener('mousedown', handlePointerDown);
+            window.addEventListener('mousemove', handlePointerMove);
+            window.addEventListener('mouseup', () => dragging = null);
+        }
+
+        function drawGrid() {
+            const layer = document.getElementById('grid-layer');
+            let html = '';
+            for(let i = 0; i <= MAX_GRID; i++) {
+                const x = toPxX(i);
+                const y = toPxY(i);
+                html += `<line x1="${x}" y1="50" x2="${x}" y2="550" stroke="#f1f5f9" stroke-width="1" />`;
+                html += `<text x="${x}" y="565" class="text-[9px] fill-slate-400 font-bold" text-anchor="middle">${i}</text>`;
+                html += `<line x1="50" y1="${y}" x2="550" y2="${y}" stroke="#f1f5f9" stroke-width="1" />`;
+                html += `<text x="35" y="${y+4}" class="text-[9px] fill-slate-400 font-bold" text-anchor="end">${i}</text>`;
+            }
+            layer.innerHTML = html;
+        }
+
+        function calculateArea() {
+            if (points.length < 3) return 0;
+            let sum = 0;
+            for(let i = 0; i < points.length; i++) {
+                let j = (i + 1) % points.length;
+                sum += (points[i].x * points[j].y) - (points[j].x * points[i].y);
+            }
+            return Math.abs(sum) / 2;
+        }
+
+        function updateUI() {
+            const totalSteps = points.length + 2; 
+            if (currentStep >= totalSteps) currentStep = totalSteps - 1;
+
+            // Відображення підказки тільки на Кроці 0
+            const hint = document.getElementById('instruction-hint');
+            if (currentStep === 0) {
+                hint.style.opacity = '1';
+                hint.style.display = 'block';
+            } else {
+                hint.style.opacity = '0';
+                setTimeout(() => { if(currentStep !== 0) hint.style.display = 'none' }, 300);
+            }
+
+            const pointsLayer = document.getElementById('points-layer');
+            const mainPoly = document.getElementById('main-polygon');
+            const stepTri = document.getElementById('step-triangle');
+            
+            const ptsString = points.map(p => `${toPxX(p.x)},${toPxY(p.y)}`).join(' ');
+            mainPoly.setAttribute('points', points.length >= 3 ? ptsString : "");
+
+            pointsLayer.innerHTML = points.map((p, i) => {
+                const px = toPxX(p.x);
+                const py = toPxY(p.y);
+                return `
+                    <g class="cursor-grab group">
+                        <circle cx="${px}" cy="${py}" r="18" fill="transparent" />
+                        <circle cx="${px}" cy="${py}" r="${(currentStep === 0) ? 8 : 7}" fill="white" stroke="#6366f1" stroke-width="2" />
+                        <text x="${px + 12}" y="${py - 12}" class="text-[11px] font-black fill-slate-800 pointer-events-none">
+                            P${i+1} (${p.x}, ${p.y})
+                        </text>
+                    </g>
+                `;
+            }).join('');
+
+            const content = document.getElementById('step-content');
+            
+            if (currentStep === 0) {
+                stepTri.style.display = 'none';
+                content.innerHTML = `
+                    <div class="mb-6">
+                        <span class="px-2 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-md uppercase tracking-wider">Крок 0: Конструктор</span>
+                        <h2 class="text-2xl font-bold mt-2 text-slate-800">Побудуйте фігуру</h2>
+                    </div>
+                    <p class="text-slate-500 text-sm leading-relaxed mb-6">
+                        Клікніть на вузли сітки, щоб додати нові вершини. Ви також можете перетягувати існуючі точки. 
+                        Для початку розрахунку необхідно мінімум 3 точки.
+                    </p>
+                    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-400 font-black uppercase tracking-widest">
+                                <tr><th class="p-3">Вершина</th><th class="p-3">X</th><th class="p-3">Y</th></tr>
+                            </thead>
+                            <tbody class="text-slate-600 font-mono">
+                                ${points.length === 0 ? '<tr><td colspan="3" class="p-4 text-center italic text-slate-300">Точок не додано</td></tr>' : 
+                                  points.map((p, i) => `
+                                    <tr class="border-t border-slate-100">
+                                        <td class="p-3 font-sans font-bold text-indigo-600">P<sub>${i+1}</sub></td>
+                                        <td class="p-3">${p.x}</td>
+                                        <td class="p-3">${p.y}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else if (currentStep <= points.length) {
+                if (points.length < 3) {
+                    currentStep = 0;
+                    updateUI();
+                    return;
+                }
+                const i = currentStep - 1;
+                const j = (i + 1) % points.length;
+                const p1 = points[i];
+                const p2 = points[j];
+                const val = (p1.x * p2.y) - (p2.x * p1.y);
+                const isPositive = val >= 0;
+
+                stepTri.setAttribute('points', `${OFFSET_X},${OFFSET_Y} ${toPxX(p1.x)},${toPxY(p1.y)} ${toPxX(p2.x)},${toPxY(p2.y)}`);
+                stepTri.setAttribute('class', isPositive ? 'positive-area' : 'negative-area');
+                stepTri.style.display = 'block';
+
+                content.innerHTML = `
+                    <div class="mb-6">
+                        <span class="px-2 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-md uppercase tracking-wider">Етап аналізу</span>
+                        <h2 class="text-2xl font-bold mt-2 text-slate-800">Ребро P<sub>${i+1}</sub> &rarr; P<sub>${j+1}</sub></h2>
+                    </div>
+                    <div class="bg-slate-900 rounded-3xl p-6 text-white math-font mb-6 shadow-2xl border border-white/10">
+                        <div class="text-[10px] text-slate-500 uppercase mb-3">Векторний добуток:</div>
+                        <div class="text-indigo-400 font-bold text-xl text-center">
+                            (${p1.x} &middot; ${p2.y}) - (${p2.x} &middot; ${p1.y}) = <span class="text-white">${val}</span>
+                        </div>
+                    </div>
+                    <div class="p-4 rounded-2xl border-2 ${isPositive ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-rose-50 border-rose-100 text-rose-800'} text-xs font-medium leading-relaxed">
+                        <b>${isPositive ? 'Додатна площа:' : 'Від\'ємна площа:'}</b><br>
+                        ${isPositive ? 'Цей трикутник додає площу до загального об\'єму.' : 'Цей трикутник віднімає зайве, формуючи контур.'}
+                    </div>
+                `;
+            } else {
+                stepTri.style.display = 'none';
+                const area = calculateArea();
+                content.innerHTML = `
+                    <div class="mb-6">
+                        <span class="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-md uppercase tracking-wider">Результат</span>
+                        <h2 class="text-2xl font-bold mt-2 text-slate-800">Загальна площа</h2>
+                    </div>
+                    <p class="text-slate-500 text-sm mb-6">Алгоритм завершив обхід всіх ${points.length} ребер.</p>
+                    <div class="bg-indigo-600 rounded-[2.5rem] p-8 text-white text-center shadow-xl shadow-indigo-200">
+                        <p class="text-[10px] text-indigo-200 uppercase mb-2 tracking-widest font-bold">Площа (S)</p>
+                        <div class="text-6xl font-black mb-2">${area.toFixed(1)}</div>
+                        <p class="text-[11px] opacity-60 italic">Квадратних одиниць</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById('total-area-val').textContent = calculateArea().toFixed(1);
+            document.getElementById('step-indicator').textContent = `Крок ${currentStep + 1} з ${totalSteps}`;
+            
+            const dots = document.getElementById('dots-container');
+            dots.innerHTML = Array.from({length: totalSteps}).map((_, idx) => `
+                <div class="h-1 rounded-full transition-all duration-500 ${idx === currentStep ? 'w-6 bg-indigo-600' : 'w-2 bg-slate-200'}"></div>
+            `).join('');
+
+            document.getElementById('next-btn').disabled = (currentStep === 0 && points.length < 3);
+            document.getElementById('prev-btn').disabled = currentStep === 0;
+            document.getElementById('next-btn').innerHTML = currentStep === totalSteps - 1 ? 'Спочатку' : 'Далі';
+            
+            lucide.createIcons();
+        }
+
+        function changeStep(delta) {
+            const totalSteps = points.length + 2;
+            currentStep += delta;
+            if (currentStep >= totalSteps) currentStep = 0;
+            if (currentStep < 0) currentStep = 0;
+            updateUI();
+        }
+
+        function resetPoints() {
+            points = [
+                { x: 2, y: 2 }, { x: 8, y: 2 }, { x: 8, y: 7 }, { x: 2, y: 7 }
+            ];
+            currentStep = 0;
+            updateUI();
+        }
+
+        function clearPoints() {
+            points = [];
+            currentStep = 0;
+            updateUI();
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
